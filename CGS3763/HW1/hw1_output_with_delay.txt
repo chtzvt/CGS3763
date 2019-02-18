@@ -1,0 +1,53 @@
+Charlton Trezevant 
+CGS 3763 - Euripides Montagne
+Producer-Consumer Results With 1000 Iteration Loop Delay
+
+There's not much of a difference between the output of the busy wait version (where the global variable busywait_amount is set to 1000) and a version with no delay set.
+
+An interesting note- My very first version of the code only had two semaphores, Full and Empty. I had trouble with the program output getting mangled by concurrent outputs from both the producer and consumer because of the Mutex semaphore, which protects the critical sections of both the producer and consumer (and thus their ability to write to stdout). 
+
+charlton@database:~/baci$ bacc hw1.c ; bainterp hw1
+Pcode and tables are stored in hw1.pco
+Compilation listing is stored in hw1.lst
+Source file: hw1.c  Mon Feb 18 23:23:42 2019
+Executing PCODE ...
+Item 0 produced.
+Item 0 consumed.
+Item 1 produced.
+Item 1 consumed.
+Item 2 produced.
+Item 2 consumed.
+Item 3 produced.
+Item 3 consumed.
+Item 4 produced.
+Item 4 consumed.
+Item 5 produced.
+Item 5 consumed.
+Item 6 produced.
+Item 6 consumed.
+Item 7 produced.
+Item 7 consumed.
+Item 8 produced.
+Item 8 consumed.
+Item 9 produced.
+Item 10 produced.
+Item 9 consumed.
+Item 11 produced.
+Item 10 consumed.
+Item 12 produced.
+Item 11 consumed.
+Item 13 produced.
+Item 12 consumed.
+Item 14 produced.
+Item 13 consumed.
+Item 15 produced.
+Item 14 consumed.
+Item 16 produced.
+Item 15 consumed.
+Item 17 produced.
+Item 16 consumed.
+Item 18 produced.
+Item 17 consumed.
+Item 19 produced.
+Item 18 consumed.
+Item 19 consumed.
