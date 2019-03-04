@@ -1,0 +1,173 @@
+/*
+  Charlton Trezevant
+  CGS 3763 - Euripides Montagne
+  Homework #2 Concurrency and I/O Subsystem
+ */
+semaphore Full, Full2, Full3;
+semaphore Mutex, Mutex2, Mutex3;
+semaphore IOREQ, ReqServiced, ReqPending, PhysicalIO, OpComplete;
+semaphore stdout;
+
+int UID, BUFID, BUFADDR, PIO; // PIO aka DADDR
+
+// Number of system calls to be sent
+const int numSyscalls = 5;
+
+// IO Request Queue - size, ID and Address
+const int IORQ_size = 1;
+int IORQ_id[IORQ_size];
+int IORQ_addr[IORQ_size];
+
+void busy(int x) {
+    for (; x > 0; x--); // busy wait for x iterations
+}
+
+void user() {
+    int i = 0, addr;
+    for (i = 0; i < numSyscalls; i++) {
+        UID = 1;
+        addr = random(50);
+        p(Full);
+        p(Mutex);
+        BUFID = UID;
+        BUFADDR = addr;
+        p(stdout);
+        cout << "User " << UID << " executed a system call to read from address " << addr << "!" << endl;
+        v(stdout);
+        v(Mutex);
+        v(IOREQ);
+        p(ReqServiced);
+    }
+
+    p(stdout);
+    cout << "user: all " << numSyscalls << " syscalls complete, terminating... " << endl;
+    v(stdout);
+}
+
+void DOIO() {
+    int k = 0, i;
+    int TID, TADDR;
+    for (i = 0; i < numSyscalls; i++) {
+        p(IOREQ);
+
+        p(Mutex);
+        TID = BUFID;
+        TADDR = BUFADDR;
+        v(Mutex);
+
+        v(Full);
+
+        p(Full2);
+        p(Mutex2);
+
+        IORQ_id[k] = TID;
+        IORQ_addr[k] = TADDR;
+
+        if (k >= IORQ_size - 1)
+            k = 0;
+        else
+            k++;
+
+        p(stdout);
+        cout << "DOIO: an IO Request Block was assembled for the UID " <<
+            TID << " and placed in the IO Request Queue" << endl;
+        v(stdout);
+
+        v(Mutex2);
+        v(ReqPending);
+    }
+
+    p(stdout);
+    cout << "DOIO: all " << numSyscalls << " syscalls complete, terminating... " << endl;
+    v(stdout);
+}
+
+
+void driver() {
+    int i, m = 0, DID, T2ADDR;
+    for (i = 0; i < numSyscalls; i++) {
+        p(ReqPending);
+
+        p(Mutex2);
+        DID = IORQ_id[m];
+        T2ADDR = IORQ_addr[m];
+
+        if (m >= IORQ_size - 1)
+            m = 0;
+        else
+            m++;
+
+        v(Mutex2);
+        v(Full2);
+
+        p(Full3);
+
+        p(Mutex3);
+        PIO = T2ADDR;
+        v(Mutex3);
+
+        v(PhysicalIO);
+
+        p(stdout);
+        cout << "DRIVER: initiated I/O op for UID " << UID << endl;
+        v(stdout);
+
+        p(OpComplete);
+        v(ReqServiced);
+
+        p(stdout);
+        cout << "Signal FROM driver TO user " << UID << ": request served" << endl;
+        v(stdout);
+    }
+
+    p(stdout);
+    cout << "driver: all " << numSyscalls << " syscalls complete, terminating... " << endl;
+    v(stdout);
+}
+
+void disk() {
+    int i, diskaddr;
+    for (i = 0; i < numSyscalls; i++) {
+        p(PhysicalIO);
+
+        p(Mutex3);
+        diskaddr = PIO;
+        v(Mutex3);
+
+        v(Full3);
+
+        busy(diskaddr); // loop 1-diskaddr
+
+        p(stdout);
+        cout << "Signal FROM disk TO driver: read operation for address " << diskaddr << " complete!" << endl;
+        v(stdout);
+
+        v(OpComplete);
+    }
+
+    p(stdout);
+    cout << "disk: all " << numSyscalls << " syscalls complete, terminating... " << endl;
+    v(stdout);
+}
+
+main() {
+    initialsem(Full, 1);
+    initialsem(Full2, 1);
+    initialsem(Full3, 1);
+    initialsem(Mutex, 1);
+    initialsem(Mutex2, 1);
+    initialsem(Mutex3, 1);
+    initialsem(IOREQ, 0);
+    initialsem(ReqServiced, 0);
+    initialsem(ReqPending, 0);
+    initialsem(PhysicalIO, 0);
+    initialsem(OpComplete, 0);
+    initialsem(stdout, 1);
+
+    cobegin {
+        disk();
+        driver();
+        DOIO();
+        user();
+    }
+}

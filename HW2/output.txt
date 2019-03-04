@@ -1,0 +1,44 @@
+Charlton Trezevant
+CGS 3763 - Euripides Montagne
+Homework #2 Concurrency and I/O Subsystem
+
+As you can see below, the program runs correctly and produces the expected output
+from each component of the I/O subsystem. I included an exit message in each component
+to demonstrate that certain coroutines terminate more quickly than others. This is
+because they have fewer contingencies (for example, DOIO).
+
+Program output:
+===============
+Pcode and tables are stored in hw2.pco
+Compilation listing is stored in hw2.lst
+Source file: hw2.cm  Mon Mar  4 02:27:09 2019
+Executing PCODE ...
+User 1 executed a system call to read from address 16!
+DOIO: an IO Request Block was assembled for the UID 1 and placed in the IO Request Queue
+DRIVER: initiated I/O op for UID 1
+Signal FROM disk TO driver: read operation for address 16 complete!
+Signal FROM driver TO user 1: request served
+User 1 executed a system call to read from address 16!
+DOIO: an IO Request Block was assembled for the UID 1 and placed in the IO Request Queue
+DRIVER: initiated I/O op for UID 1
+Signal FROM disk TO driver: read operation for address 16 complete!
+Signal FROM driver TO user 1: request served
+User 1 executed a system call to read from address 13!
+DOIO: an IO Request Block was assembled for the UID 1 and placed in the IO Request Queue
+DRIVER: initiated I/O op for UID 1
+Signal FROM disk TO driver: read operation for address 13 complete!
+Signal FROM driver TO user 1: request served
+User 1 executed a system call to read from address 3!
+DOIO: an IO Request Block was assembled for the UID 1 and placed in the IO Request Queue
+DRIVER: initiated I/O op for UID 1
+Signal FROM disk TO driver: read operation for address 3 complete!
+Signal FROM driver TO user 1: request served
+User 1 executed a system call to read from address 38!
+DOIO: an IO Request Block was assembled for the UID 1 and placed in the IO Request Queue
+DOIO: all 5 syscalls complete, terminating...
+DRIVER: initiated I/O op for UID 1
+Signal FROM disk TO driver: read operation for address 38 complete!
+Signal FROM driver TO user 1: request served
+disk: all 5 syscalls complete, terminating...
+driver: all 5 syscalls complete, terminating...
+user: all 5 syscalls complete, terminating...
