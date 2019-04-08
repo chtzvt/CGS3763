@@ -59,10 +59,7 @@ void user() {
 void DOIO() {
     int k = 0;
     int TID, TADDR;
-    while (1 == 1) {
-        if (all_syscalls_sent() == 1)
-            break;
-            
+    while (all_syscalls_sent() != 1) {
         p(IOREQ);
 
         p(Mutex);
@@ -91,6 +88,9 @@ void DOIO() {
 
         v(Mutex2);
         v(ReqPending);
+        
+        if (all_syscalls_sent() == 1)
+            break;
     }
 
     p(stdout);
@@ -101,9 +101,7 @@ void DOIO() {
 
 void driver() {
     int i = 0, m = 0, DID, T2ADDR;
-    while (1 == 1) {
-        if (all_syscalls_sent() == 1)
-            break;
+    while (all_syscalls_sent() != 1) {
 
         p(ReqPending);
         p(Mutex2);
@@ -136,6 +134,9 @@ void driver() {
         p(stdout);
         cout << "Signal FROM driver TO user " << UID << ": request served" << endl;
         v(stdout);
+        
+        if (all_syscalls_sent() == 1)
+           break;
     }
 
     p(stdout);
@@ -145,10 +146,7 @@ void driver() {
 
 void disk() {
     int i = 0, diskaddr;
-    while (1 == 1) {
-       if (all_syscalls_sent() == 1)
-          break;
-
+    while (all_syscalls_sent() != 1) {
         p(PhysicalIO);
 
         p(Mutex3);
@@ -168,6 +166,9 @@ void disk() {
         p(QuerySyscalls);
         numSyscallsCompleted++;
         v(QuerySyscalls);
+        
+        if (all_syscalls_sent() == 1)
+           break;
     }
 
     p(stdout);
