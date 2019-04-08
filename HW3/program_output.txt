@@ -1,0 +1,169 @@
+charlton@ubuntu:~/hw3$ bainterp hw3
+Source file: hw3.cm  Sat Apr  6 02:10:20 2019
+Executing PCODE ...
+User 3 executed a system call to read from address 4 on device 0
+DOIO: An IORB was assembled to read address 4 from device 0 for User 3
+User 2 executed a system call to read from address 10 on device 0
+Driver 1 initiated an I/O operation for User 3 to read from address 4
+DOIO: An IORB was assembled to read address 10 from device 0 for User 2
+User 1 executed a system call to read from address 20 on device 0
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+DOIO: An IORB was assembled to read address 20 from device 0 for User 1
+User 0 executed a system call to read from address 13 on device 0
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 4
+Driver 1 completed reading address 4 for User 3
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+Driver 1 initiated an I/O operation for User 2 to read from address 10
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+DOIO: An IORB was assembled to read address 13 from device 0 for User 0
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 3 executed a system call to read from address 16 on device 0
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 10
+Driver 1 completed reading address 10 for User 2
+Driver 1 initiated an I/O operation for User 1 to read from address 20
+DOIO: An IORB was assembled to read address 16 from device 0 for User 3
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 0 executed a system call to read from address 20 on device 0
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 20
+Driver 1 completed reading address 20 for User 1
+Driver 1 initiated an I/O operation for User 0 to read from address 13
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+DOIO: An IORB was assembled to read address 20 from device 0 for User 0
+User 1 executed a system call to read from address 13 on device 0
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 13
+Driver 1 completed reading address 13 for User 0
+Driver 1 initiated an I/O operation for User 3 to read from address 16
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 2 executed a system call to read from address 14 on device 0
+DOIO: An IORB was assembled to read address 13 from device 0 for User 1
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 16
+Driver 1 completed reading address 16 for User 3
+Driver 1 initiated an I/O operation for User 0 to read from address 20
+DOIO: An IORB was assembled to read address 14 from device 0 for User 2
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 0 executed a system call to read from address 5 on device 0
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 20
+Driver 1 completed reading address 20 for User 0
+Driver 1 initiated an I/O operation for User 1 to read from address 13
+DOIO: An IORB was assembled to read address 5 from device 0 for User 0
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 0 executed a system call to read from address 4 on device 1
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 13
+Driver 1 completed reading address 13 for User 1
+Driver 1 initiated an I/O operation for User 2 to read from address 14
+DOIO: An IORB was assembled to read address 4 from device 1 for User 0
+Driver 2 initiated an I/O operation for User 0 to read from address 0
+User 1 executed a system call to read from address 9 on device 1
+Disk 2 completed a read operation from address 0
+Driver 2 completed reading address 0 for User 0
+Disk 1 completed a read operation from address 14
+Driver 1 completed reading address 14 for User 2
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+DOIO: An IORB was assembled to read address 9 from device 1 for User 1
+Driver 2 initiated an I/O operation for User 0 to read from address 4
+User 0 executed a system call to read from address 2 on device 1
+Disk 1 completed a read operation from address 5
+Driver 1 completed reading address 5 for User 0
+User 0: all syscalls sent, exiting...
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+DOIO: An IORB was assembled to read address 2 from device 1 for User 0
+User 2 executed a system call to read from address 12 on device 1
+Disk 2 completed a read operation from address 4
+Driver 2 completed reading address 4 for User 0
+Driver 2 initiated an I/O operation for User 1 to read from address 9
+Disk 1 completed a read operation from address 5
+Driver 1 completed reading address 5 for User 0
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+DOIO: An IORB was assembled to read address 12 from device 1 for User 2
+User 3 executed a system call to read from address 16 on device 1
+Disk 2 completed a read operation from address 9
+Driver 2 completed reading address 9 for User 1
+Disk 1 completed a read operation from address 5
+Driver 2 initiated an I/O operation for User 0 to read from address 2
+Driver 1 completed reading address 5 for User 0
+Disk 2 completed a read operation from address 2
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+Driver 2 completed reading address 2 for User 0
+DOIO: An IORB was assembled to read address 16 from device 1 for User 3
+User 1 executed a system call to read from address 9 on device 0
+Driver 2 initiated an I/O operation for User 2 to read from address 12
+Disk 1 completed a read operation from address 5
+Driver 1 completed reading address 5 for User 0
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+DOIO: An IORB was assembled to read address 9 from device 0 for User 1
+Disk 1 completed a read operation from address 5
+Driver 1 completed reading address 5 for User 0
+Driver 1 initiated an I/O operation for User 0 to read from address 5
+Disk 2 completed a read operation from address 12
+Driver 2 completed reading address 12 for User 2
+Driver 2 initiated an I/O operation for User 3 to read from address 16
+User 2 executed a system call to read from address 10 on device 1
+DOIO: An IORB was assembled to read address 10 from device 1 for User 2
+Disk 1 completed a read operation from address 5
+Driver 1 completed reading address 5 for User 0
+Driver 1 initiated an I/O operation for User 1 to read from address 9
+Disk 1 completed a read operation from address 9
+Driver 1 completed reading address 9 for User 1
+Driver 1 initiated an I/O operation for User 1 to read from address 9
+User 1 executed a system call to read from address 12 on device 1
+Disk 2 completed a read operation from address 16
+Driver 2 completed reading address 16 for User 3
+Driver 2 initiated an I/O operation for User 2 to read from address 10
+Disk 1 completed a read operation from address 9
+Driver 1 completed reading address 9 for User 1
+DOIO: An IORB was assembled to read address 12 from device 1 for User 1
+User 1: all syscalls sent, exiting...
+User 3 executed a system call to read from address 4 on device 1
+Disk 2 completed a read operation from address 10
+Driver 1 initiated an I/O operation for User 1 to read from address 9
+Driver 2 completed reading address 10 for User 2
+Driver 2 initiated an I/O operation for User 1 to read from address 12
+DOIO: An IORB was assembled to read address 4 from device 1 for User 3
+User 2 executed a system call to read from address 10 on device 0
+Disk 1 completed a read operation from address 9
+Driver 1 completed reading address 9 for User 1
+Driver 1 initiated an I/O operation for User 1 to read from address 9
+Disk 2 completed a read operation from address 12
+Driver 2 completed reading address 12 for User 1
+Driver 2 initiated an I/O operation for User 3 to read from address 4
+DOIO: An IORB was assembled to read address 10 from device 0 for User 2
+Disk 1 completed a read operation from address 9
+Driver 1 completed reading address 9 for User 1
+Disk 2 completed a read operation from address 4
+Driver 2 completed reading address 4 for User 3
+Driver 1 initiated an I/O operation for User 2 to read from address 10
+Driver 2 initiated an I/O operation for User 3 to read from address 4
+User 3 executed a system call to read from address 7 on device 0
+DOIO: An IORB was assembled to read address 7 from device 0 for User 3
+Disk 1 completed a read operation from address 10
+Driver 1 completed reading address 10 for User 2
+Disk 2 completed a read operation from address 4
+Driver 2 completed reading address 4 for User 3
+User 2: all syscalls sent, exiting...
+User 3: all syscalls sent, exiting...
+Driver 1 initiated an I/O operation for User 3 to read from address 7
+Driver 2 initiated an I/O operation for User 3 to read from address 4
+DOIO: exiting...
+Disk 2 completed a read operation from address 4
+Disk 1 completed a read operation from address 7
+Disk 2: caught exit signal...
+Driver 2 completed reading address 4 for User 3
+Disk 1: caught exit signal...
+Driver 2: caught exit signal...
+Driver 1 completed reading address 7 for User 3
+Driver 1: caught exit signal...

@@ -1,0 +1,354 @@
+/*
+  Charlton Trezevant
+  CGS 3763 - Euripides Montagne
+  Homework #3 - Concurrency and I/O Subsystem
+  Five Users/DOIO/Two Device drivers/Two Disks
+ */
+ 
+const int NUM_DRIVERS = 2;
+const int NUM_USERS = 4;
+const int REQS_PER_USER = 5;
+int shutdown = 0;
+
+semaphore IOReq_Full;
+semaphore IOReq_New;
+binarysem IOReq_Mutex;
+semaphore IOReq_Serviced[NUM_USERS];
+
+int UserReq_ID;
+int UserReq_Addr;
+int UserReq_DeviceID;
+int IORQ_ID[NUM_DRIVERS];
+int IORQ_ADDR[NUM_DRIVERS];
+
+int PhysicalIO_Address[NUM_DRIVERS];
+
+semaphore Driver1_Full;
+binarysem Driver1_Mutex;
+semaphore Driver1_ReqPending;
+binarysem Driver1_OpCompleted;
+semaphore Driver1_Ctl;
+
+semaphore Driver2_Full;
+binarysem Driver2_Mutex;
+semaphore Driver2_ReqPending;
+binarysem Driver2_OpCompleted;
+semaphore Driver2_Ctl;
+
+semaphore Disk1_Full;
+binarysem Disk1_Mutex;
+semaphore Disk1_PIO;
+semaphore Disk1_Ctl;
+
+semaphore Disk2_Full;
+binarysem Disk2_Mutex;
+semaphore Disk2_PIO;
+semaphore Disk2_Ctl;
+
+binarysem stdout;
+
+void busy(int x) {
+    for (; x > 0; x--); // busy wait for x iterations
+}
+
+void User(int id) {
+    int i, addr, dev;
+    for (i = 0; i < REQS_PER_USER; i++) {
+        addr = random(20) + 1;
+        dev = random(2);
+
+        p(IOReq_Full);
+        p(IOReq_Mutex);
+        
+        UserReq_ID = id;
+        UserReq_Addr = addr;
+        UserReq_DeviceID = dev;
+        
+        v(IOReq_Mutex);
+        v(IOReq_New);
+        
+        p(stdout);
+        cout << "User " << id << " executed a system call to read from address "
+             << addr << " on device " << dev << endl;
+        v(stdout);
+
+        p(IOReq_Serviced[id]);
+    }
+    
+    p(stdout);
+    cout << "User " << id << ": all syscalls sent, exiting..." << endl;
+    v(stdout);
+}
+
+void DOIO() {
+    int i, IORB_UserID, IORB_Addr, IORB_DeviceID;
+    for (i = 0; i < (NUM_USERS * REQS_PER_USER); i++) {
+        p(IOReq_New);
+        p(IOReq_Mutex);
+
+        IORB_UserID = UserReq_ID;
+        IORB_Addr = UserReq_Addr;
+        IORB_DeviceID = UserReq_DeviceID;
+
+        v(IOReq_Mutex);
+        v(IOReq_Full);
+
+        p(stdout);
+        cout << "DOIO: An IORB was assembled to read address " << IORB_Addr
+            << " from device " << IORB_DeviceID << " for User " <<
+            IORB_UserID << endl;
+        v(stdout);
+        
+        // Handle Driver 1
+        p(Driver1_Full);
+        p(Driver1_Mutex);
+
+        IORQ_ID[IORB_DeviceID] = IORB_UserID;
+        IORQ_ADDR[IORB_DeviceID] = IORB_Addr;
+
+        v(Driver1_Mutex);
+        v(Driver1_ReqPending);
+        v(Driver1_Ctl);
+
+        // Handle Driver 2
+        p(Driver2_Full);
+        p(Driver2_Mutex);
+
+        IORQ_ID[IORB_DeviceID] = IORB_UserID;
+        IORQ_ADDR[IORB_DeviceID] = IORB_Addr;
+
+        v(Driver2_Mutex);
+        v(Driver2_ReqPending);
+        v(Driver2_Ctl);
+    }
+
+    shutdown = 1;
+    v(Driver1_Ctl);
+    v(Disk1_Ctl);
+
+    v(Driver2_Ctl);
+    v(Disk2_Ctl);
+
+    p(stdout);
+    cout << "DOIO: exiting..." << endl;
+    v(stdout);
+}
+  
+void Driver1() {
+
+    int IORB_UserID, IORB_Addr;
+
+    p(Driver1_ReqPending);
+
+    while (shutdown == 0) {
+        p(Driver1_Ctl);
+        if (shutdown == 1) {
+            v(Disk1_Ctl);
+            break;
+        }
+
+        p(Driver1_Mutex);
+
+        IORB_UserID = IORQ_ID[0];
+        IORB_Addr = IORQ_ADDR[0];
+
+        v(Driver1_Mutex);
+        v(Driver1_Full);
+
+        p(stdout);
+        cout << "Driver 1 initiated an I/O operation for User " <<
+            IORB_UserID << " to read from address " <<
+            IORB_Addr << endl;
+        v(stdout);
+
+        p(Disk1_Full);
+        p(Disk1_Mutex);
+
+        PhysicalIO_Address[0] = IORB_Addr;
+
+        v(Disk1_Ctl);
+        v(Disk1_PIO);
+        v(Disk1_Mutex);
+
+        p(Driver1_OpCompleted);
+
+        p(stdout);
+        cout << "Driver 1 completed reading address " <<
+            IORB_Addr << " for User " << IORB_UserID << endl;
+        v(stdout);
+
+        v(IOReq_Serviced[IORB_UserID]);
+    }
+
+    p(stdout);
+    cout << "Driver 1: caught exit signal..." << endl;
+    v(stdout);
+}
+  
+void Driver2() {
+
+    int IORB_UserID, IORB_Addr;
+
+    p(Driver2_ReqPending);
+
+    while (shutdown == 0) {
+        p(Driver2_Ctl);
+        if (shutdown == 1) {
+            v(Disk2_Ctl);
+            break;
+        }
+
+        p(Driver2_Mutex);
+
+        IORB_UserID = IORQ_ID[1];
+        IORB_Addr = IORQ_ADDR[1];
+
+        v(Driver2_Mutex);
+        v(Driver2_Full);
+
+        p(stdout);
+        cout << "Driver 2 initiated an I/O operation for User " <<
+            IORB_UserID << " to read from address " <<
+            IORB_Addr << endl;
+        v(stdout);
+
+        p(Disk2_Full);
+        p(Disk2_Mutex);
+
+        PhysicalIO_Address[1] = IORB_Addr;
+
+        v(Disk2_Ctl);
+        v(Disk2_PIO);
+        v(Disk2_Mutex);
+
+        p(Driver2_OpCompleted);
+
+        p(stdout);
+        cout << "Driver 2 completed reading address " <<
+            IORB_Addr << " for User " << IORB_UserID << endl;
+        v(stdout);
+
+        v(IOReq_Serviced[IORB_UserID]);
+    }
+
+    p(stdout);
+    cout << "Driver 2: caught exit signal..." << endl;
+    v(stdout);
+}
+
+void Disk1() {
+    int seek;
+
+    while (shutdown == 0) {
+        p(Disk1_Ctl);
+        if (shutdown == 1) {
+            v(Driver1_OpCompleted);
+            break;
+        }
+
+        p(Disk1_PIO);
+        p(Disk1_Mutex);
+
+        seek = PhysicalIO_Address[0];
+
+        v(Disk1_Mutex);
+        v(Disk1_Full);
+
+        busy(seek);
+
+        p(stdout);
+        cout << "Disk 1 completed a read operation from address " <<
+            seek << endl;
+        v(stdout);
+
+        v(Driver1_OpCompleted);
+    }
+
+    p(stdout);
+    cout << "Disk 1: caught exit signal..." << endl;
+    v(stdout);
+}
+
+void Disk2() {
+    int seek;
+
+    while (shutdown == 0) {
+        p(Disk2_Ctl);
+        if (shutdown == 1) {
+            v(Driver2_OpCompleted);
+            break;
+        }
+
+        p(Disk2_PIO);
+        p(Disk2_Mutex);
+
+        seek = PhysicalIO_Address[1];
+
+        v(Disk2_Mutex);
+        v(Disk2_Full);
+
+        busy(seek);
+
+        p(stdout);
+        cout << "Disk 2 completed a read operation from address " <<
+            seek << endl;
+        v(stdout);
+
+        v(Driver2_OpCompleted);
+    }
+
+    p(stdout);
+    cout << "Disk 2: caught exit signal..." << endl;
+    v(stdout);
+}
+
+void main() {
+    int i;
+  
+    initialsem(IOReq_Full, 1);
+    initialsem(IOReq_New, 0);
+    initialsem(IOReq_Mutex, 1);
+    initialsem(stdout, 1);
+
+    for (i = 0; i < NUM_USERS; i++) {
+        initialsem(IOReq_Serviced[i], 0);
+    }
+
+    initialsem(Driver1_Full, 1);
+    initialsem(Driver1_ReqPending, 0);
+    initialsem(Driver1_Mutex, 1);
+    initialsem(Driver1_OpCompleted, 0);
+
+    initialsem(Driver2_Full, 1);
+    initialsem(Driver2_ReqPending, 0);
+    initialsem(Driver2_Mutex, 1);
+    initialsem(Driver2_OpCompleted, 0);
+
+    initialsem(Disk1_Full, 1);
+    initialsem(Disk1_Mutex, 1);
+    initialsem(Disk1_PIO, 0);
+
+    initialsem(Disk2_Full, 1);
+    initialsem(Disk2_Mutex, 1);
+    initialsem(Disk2_PIO, 0);
+    
+    initialsem(Driver1_Ctl,0);
+    initialsem(Driver2_Ctl,0);
+    initialsem(Disk1_Ctl,0);
+    initialsem(Disk2_Ctl,0);
+
+    cobegin {
+        DOIO();
+        
+        Driver1();
+        Driver2();
+          
+        Disk1();
+        Disk2();
+          
+        User(0);
+        User(1);
+        User(2);
+        User(3);
+    }
+}
