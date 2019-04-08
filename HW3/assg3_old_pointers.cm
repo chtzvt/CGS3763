@@ -1,0 +1,275 @@
+const int NUM_DRIVERS = 2;
+const int NUM_USERS = 4;
+const int REQS_PER_USER = 5;
+const int TOTAL = 20;
+int shutdown = 0;
+
+semaphore IOReq_Full;
+semaphore IOReq_New;
+binarysem IOReq_Mutex;
+binarysem IOReq_Serviced[NUM_USERS];
+
+int UserReq_ID;
+int UserReq_Addr;
+int UserReq_DeviceID;
+int IORQ_ID[NUM_DRIVERS];
+int IORQ_ADDR[NUM_DRIVERS];
+
+int PhysicalIO_Address[NUM_DRIVERS];
+
+semaphore Driver1_Full;
+binarysem Driver1_Mutex;
+semaphore Driver1_ReqPending;
+binarysem Driver1_OpCompleted;
+binarysem Driver1_Ctl;
+
+semaphore Driver2_Full;
+binarysem Driver2_Mutex;
+semaphore Driver2_ReqPending;
+binarysem Driver2_OpCompleted;
+binarysem Driver2_Ctl;
+
+semaphore Disk1_Full;
+binarysem Disk1_Mutex;
+semaphore Disk1_PIO;
+binarysem Disk1_Ctl;
+
+semaphore Disk2_Full;
+binarysem Disk2_Mutex;
+semaphore Disk2_PIO;
+binarysem Disk2_Ctl;
+
+binarysem stdout;
+
+void busy(int x) {
+    for (; x > 0; x--); // busy wait for x iterations
+}
+
+void User(int id) {
+    int i, addr, dev;
+    for (i = 0; i < REQS_PER_USER; i++) {
+        addr = random(20) + 1;
+        dev = random(2);
+
+        p(IOReq_Full);
+        p(IOReq_Mutex);
+        
+        UserReq_ID = id;
+        UserReq_Addr = addr;
+        UserReq_DeviceID = dev;
+        
+        v(IOReq_Mutex);
+        v(IOReq_New);
+        
+        p(stdout);
+        cout << "User " << id << " executed a system call to read from address "
+             << addr << " on device " << dev << endl;
+        v(stdout);
+
+        p(IOReq_Serviced[id]);
+    }
+    
+    p(stdout);
+    cout << "User " << id << ": all syscalls sent, eziting..." << endl;
+    v(stdout);
+}
+
+void DOIO() {
+    int j, IORB_UserID, IORB_Addr, IORB_DeviceID;
+    for (j = 0; j < TOTAL; j++) {
+        p(IOReq_New);
+        p(IOReq_Mutex);
+
+        IORB_UserID = UserReq_ID;
+        IORB_Addr = UserReq_Addr;
+        IORB_DeviceID = UserReq_DeviceID;
+
+        v(IOReq_Mutex);
+        v(IOReq_Full);
+        
+        if (IORB_DeviceID == 1) {
+            p(Driver1_Full);
+            p(Driver1_Mutex);
+
+            IORQ_ID[IORB_DeviceID] = IORB_UserID;
+            IORQ_ADDR[IORB_DeviceID] = IORB_Addr;
+
+            p(stdout);
+            cout << "DOIO: An IORB was assembled to read address " << IORB_Addr
+                << " from device " << IORB_DeviceID << " for User " <<
+                IORB_UserID << endl;
+            v(stdout);
+
+            v(Driver1_Mutex);
+            v(Driver1_Ctl);
+            v(Driver1_ReqPending);
+        } else if (IORB_DeviceID == 2) {
+            p(Driver2_Full);
+            p(Driver2_Mutex);
+
+            IORQ_ID[IORB_DeviceID] = IORB_UserID;
+            IORQ_ADDR[IORB_DeviceID] = IORB_Addr;
+
+            p(stdout);
+            cout << "DOIO: An IORB was assembled to read address " << IORB_Addr
+                << " from device " << IORB_DeviceID << " for User " <<
+                IORB_UserID << endl;
+            v(stdout);
+
+            v(Driver2_Mutex);
+            v(Driver2_Ctl);
+            v(Driver2_ReqPending);
+        }
+    }
+
+    shutdown = 1;
+    v(Driver1_Ctl);
+    v(Driver2_Ctl);
+
+    p(stdout);
+    cout << "DOIO: exiting..." << endl;
+    v(stdout);
+}
+  
+void Driver(int id, semaphore& DriverMutex, semaphore& DriverReqPending,
+    semaphore& DriverOperationCompleted, semaphore& DriverFull,
+    semaphore& DiskMutex, semaphore& DiskFull, semaphore& DiskPIO,
+    semaphore& DriverCtl) {
+
+    int IORB_UserID, IORB_Addr;
+
+    p(DriverReqPending);
+
+    while (shutdown == 0) {
+        p(DriverCtl);
+        if (shutdown == 1) {
+            break;
+        }
+
+        p(DriverMutex);
+
+        IORB_UserID = IORQ_ID[id];
+        IORB_Addr = IORQ_ADDR[id];
+
+        v(DriverMutex);
+        v(DriverFull);
+
+        p(stdout);
+        cout << "Driver " << id << " initiated an I/O operation for User " <<
+            IORB_UserID << " to read from address " <<
+            IORB_Addr << endl;
+        v(stdout);
+
+        p(DiskFull);
+        p(DiskMutex);
+
+        PhysicalIO_Address[id] = IORB_Addr;
+
+        v(DiskMutex);
+        v(DiskPIO);
+
+        p(stdout);
+        cout << "Driver " << id << " completed reading address " <<
+            IORB_Addr << " for User " << IORB_UserID << endl;
+        v(stdout);
+
+        p(DriverOperationCompleted);
+
+        v(IOReq_Serviced[IORB_UserID]);
+    }
+
+    p(stdout);
+    cout << "Driver " << id << ": caught exit signal..." << endl;
+    v(stdout);
+}
+  
+void Disk(int id, semaphore& DiskPIO, semaphore& DiskMutex, semaphore& DiskFull,
+    semaphore& DiskOpComplete, semaphore& DiskCtl) {
+    int seek;
+
+    while (shutdown == 0) {
+        p(DiskCtl);
+        if (shutdown == 1) {
+            break;
+        }
+
+        p(DiskPIO);
+        p(DiskMutex);
+
+        seek = PhysicalIO_Address[id];
+
+        v(DiskMutex);
+        v(DiskFull);
+
+        busy(seek);
+
+        p(stdout);
+        cout << "Disk " << id << " completed a read operation from address " <<
+            seek << endl;
+        v(stdout);
+
+        v(DiskOpComplete);
+
+    }
+
+    p(stdout);
+    cout << "Disk " << id << ": caught exit signal..." << endl;
+    v(stdout);
+}
+
+void main() {
+    int i;
+  
+    initialsem(IOReq_Full, 1);
+    initialsem(IOReq_New, 0);
+    initialsem(IOReq_Mutex, 1);
+    initialsem(stdout, 1);
+
+    for (i = 0; i < NUM_USERS; i++) {
+        initialsem(IOReq_Serviced[i], 0);
+    }
+
+    initialsem(Driver1_Full, 1);
+    initialsem(Driver1_ReqPending, 0);
+    initialsem(Driver1_Mutex, 1);
+    initialsem(Driver1_OpCompleted, 0);
+
+    initialsem(Driver2_Full, 1);
+    initialsem(Driver2_ReqPending, 0);
+    initialsem(Driver2_Mutex, 1);
+    initialsem(Driver2_OpCompleted, 0);
+
+    initialsem(Disk1_Full, 1);
+    initialsem(Disk1_Mutex, 1);
+    initialsem(Disk1_PIO, 0);
+
+    initialsem(Disk2_Full, 1);
+    initialsem(Disk2_Mutex, 1);
+    initialsem(Disk2_PIO, 0);
+    
+    initialsem(Driver1_Ctl,0);
+    initialsem(Driver2_Ctl,0);
+    initialsem(Disk1_Ctl,0);
+    initialsem(Disk2_Ctl,0);
+
+    cobegin {
+        DOIO();
+        
+        Driver(0, Driver1_Mutex, Driver1_ReqPending,
+          Driver1_OpCompleted, Driver1_Full, Disk1_Mutex, Disk1_Full, Disk1_PIO, Driver1_Ctl);
+          
+        Driver(1, Driver2_Mutex, Driver2_ReqPending,
+          Driver2_OpCompleted, Driver2_Full, Disk2_Mutex, Disk2_Full, Disk2_PIO, Driver2_Ctl);
+          
+        Disk(0, Disk1_PIO, Disk1_Mutex, Disk1_Full,
+          Driver1_OpCompleted, Disk1_Ctl);
+          
+        Disk(1, Disk2_PIO, Disk2_Mutex, Disk2_Full,
+          Driver2_OpCompleted, Disk2_Ctl);
+          
+        User(0);
+        User(1);
+        User(2);
+        User(3);
+    }
+}
